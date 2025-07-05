@@ -46,6 +46,11 @@ dependencies {
     implementation(libs.androidx.core.ktx.v1120)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.play.services.location)
+    implementation(libs.google.firebase.firestore.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.android.image.cropper)
+    implementation(libs.androidx.material3.android)
 }
 
 afterEvaluate {
@@ -55,7 +60,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "com.github.abidzakly"
                 artifactId = "ktor-aio-essentials-library"
-                version = "1.0.1"
+                version = "2.0.0"
             }
         }
     }
