@@ -182,7 +182,7 @@ class NominatimHelperClient(private val context: Context) {
     /**
      * Search function by query
      */
-    private suspend fun searchLocationByName(query: String): AddressResult? =
+    suspend fun searchLocationByName(query: String): AddressResult? =
         withContext(Dispatchers.IO) {
             try {
                 val client = HttpClient(Android) {
