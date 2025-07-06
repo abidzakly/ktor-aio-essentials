@@ -222,7 +222,10 @@ class NominatimHelperClient(private val context: Context) {
     /**
      * Search function by query
      */
-    suspend fun searchManyLocationByName(query: String): AddressResult? =
+    /**
+     * Search function by query, returning a list of results (limit: 20)
+     */
+    suspend fun searchLocationsByName(query: String): List<AddressResult> =
         withContext(Dispatchers.IO) {
             try {
                 val client = HttpClient(Android) {
@@ -244,19 +247,23 @@ class NominatimHelperClient(private val context: Context) {
                 val searchResults = response.body<List<NominatimSearchResult>>()
                 client.close()
 
-                if (searchResults.isNotEmpty()) {
-                    val result = searchResults.first()
-                    AddressResult(
-                        name = result.displayName.split(",").firstOrNull()?.trim() ?: "",
-                        displayName = result.displayName,
-                        latitude = result.lat.toDoubleOrNull() ?: 0.0,
-                        longitude = result.lon.toDoubleOrNull() ?: 0.0
-                    )
-                } else {
-                    null
+                searchResults.mapNotNull { result ->
+                    val lat = result.lat.toDoubleOrNull()
+                    val lon = result.lon.toDoubleOrNull()
+
+                    if (lat != null && lon != null) {
+                        AddressResult(
+                            name = result.displayName.split(",").firstOrNull()?.trim() ?: "",
+                            displayName = result.displayName,
+                            latitude = lat,
+                            longitude = lon
+                        )
+                    } else {
+                        null
+                    }
                 }
             } catch (e: Exception) {
-                null
+                emptyList()
             }
         }
 
