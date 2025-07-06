@@ -283,10 +283,10 @@ internal data class NominatimResponse(
 
 @Serializable
 data class AddressResult(
-    val name: String,
-    val displayName: String,
-    val latitude: Double,
-    val longitude: Double
+    var name: String = "",
+    var displayName: String = "",
+    var latitude: Double = 0.0,
+    var longitude: Double = 0.0
 )
 
 @Serializable
