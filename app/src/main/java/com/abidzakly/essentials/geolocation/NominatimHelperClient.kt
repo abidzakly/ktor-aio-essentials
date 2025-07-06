@@ -113,24 +113,25 @@ class NominatimHelperClient(private val context: Context) {
      * Retrieves the last known user location
      */
     @SuppressLint("MissingPermission")
-    private suspend fun getLastLocation(): Pair<Double, Double>? = suspendCancellableCoroutine { continuation ->
-        if (!areLocationPermissionsGranted()) {
-            continuation.resumeWithException(SecurityException("Location permissions not granted"))
-            return@suspendCancellableCoroutine
-        }
+    private suspend fun getLastLocation(): Pair<Double, Double>? =
+        suspendCancellableCoroutine { continuation ->
+            if (!areLocationPermissionsGranted()) {
+                continuation.resumeWithException(SecurityException("Location permissions not granted"))
+                return@suspendCancellableCoroutine
+            }
 
-        fusedLocationProviderClient.lastLocation
-            .addOnSuccessListener { location ->
-                if (location != null) {
-                    continuation.resume(Pair(location.latitude, location.longitude))
-                } else {
-                    continuation.resume(null)
+            fusedLocationProviderClient.lastLocation
+                .addOnSuccessListener { location ->
+                    if (location != null) {
+                        continuation.resume(Pair(location.latitude, location.longitude))
+                    } else {
+                        continuation.resume(null)
+                    }
                 }
-            }
-            .addOnFailureListener { exception ->
-                continuation.resumeWithException(exception)
-            }
-    }
+                .addOnFailureListener { exception ->
+                    continuation.resumeWithException(exception)
+                }
+        }
 
     /**
      * Retrieves the current user location
@@ -177,6 +178,49 @@ class NominatimHelperClient(private val context: Context) {
                 ) == PackageManager.PERMISSION_GRANTED)
     }
 
+
+    /**
+     * Search function by query
+     */
+    private suspend fun searchLocationByName(query: String): AddressResult? =
+        withContext(Dispatchers.IO) {
+            try {
+                val client = HttpClient(Android) {
+                    install(ContentNegotiation) {
+                        json(Json {
+                            ignoreUnknownKeys = true
+                            prettyPrint = false
+                            encodeDefaults = false
+                        })
+                    }
+                }
+
+                val response = client.get("https://nominatim.openstreetmap.org/search") {
+                    parameter("q", query)
+                    parameter("format", "json")
+                    parameter("limit", "1")
+                }
+
+                val searchResults = response.body<List<NominatimSearchResult>>()
+                client.close()
+
+                if (searchResults.isNotEmpty()) {
+                    val result = searchResults.first()
+                    AddressResult(
+                        name = result.displayName.split(",").firstOrNull()?.trim() ?: "",
+                        displayName = result.displayName,
+                        latitude = result.lat.toDoubleOrNull() ?: 0.0,
+                        longitude = result.lon.toDoubleOrNull() ?: 0.0
+                    )
+                } else {
+                    null
+                }
+            } catch (e: Exception) {
+                null
+            }
+        }
+
+
     fun close() {
         client.close()
     }
@@ -196,4 +240,12 @@ data class AddressResult(
     val displayName: String,
     val latitude: Double,
     val longitude: Double
+)
+
+@Serializable
+private data class NominatimSearchResult(
+    @SerialName("display_name")
+    val displayName: String,
+    val lat: String,
+    val lon: String
 )
