@@ -178,7 +178,6 @@ class NominatimHelperClient(private val context: Context) {
                 ) == PackageManager.PERMISSION_GRANTED)
     }
 
-
     /**
      * Search function by query
      */
@@ -199,6 +198,47 @@ class NominatimHelperClient(private val context: Context) {
                     parameter("q", query)
                     parameter("format", "json")
                     parameter("limit", "1")
+                }
+
+                val searchResults = response.body<List<NominatimSearchResult>>()
+                client.close()
+
+                if (searchResults.isNotEmpty()) {
+                    val result = searchResults.first()
+                    AddressResult(
+                        name = result.displayName.split(",").firstOrNull()?.trim() ?: "",
+                        displayName = result.displayName,
+                        latitude = result.lat.toDoubleOrNull() ?: 0.0,
+                        longitude = result.lon.toDoubleOrNull() ?: 0.0
+                    )
+                } else {
+                    null
+                }
+            } catch (e: Exception) {
+                null
+            }
+        }
+
+    /**
+     * Search function by query
+     */
+    suspend fun searchManyLocationByName(query: String): AddressResult? =
+        withContext(Dispatchers.IO) {
+            try {
+                val client = HttpClient(Android) {
+                    install(ContentNegotiation) {
+                        json(Json {
+                            ignoreUnknownKeys = true
+                            prettyPrint = false
+                            encodeDefaults = false
+                        })
+                    }
+                }
+
+                val response = client.get("https://nominatim.openstreetmap.org/search") {
+                    parameter("q", query)
+                    parameter("format", "json")
+                    parameter("limit", "20")
                 }
 
                 val searchResults = response.body<List<NominatimSearchResult>>()

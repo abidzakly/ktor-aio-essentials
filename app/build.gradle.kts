@@ -60,7 +60,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "com.github.abidzakly"
                 artifactId = "ktor-aio-essentials-library"
-                version = "2.0.21"
+                version = "2.0.3"
             }
         }
     }
